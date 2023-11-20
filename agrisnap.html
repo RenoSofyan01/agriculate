@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #ecf0f1;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #2ecc71;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        main {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #2ecc71;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #2ecc71;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        select {
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            display: block;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Form Pengisian Data</h1>
+    </header>
+
+    <main>
+        <h1>Masukan Data</h1>
+
+        <video id="video" width="100%" height="auto" autoplay></video><br>
+
+        <button onclick="startCamera()">Buka Kamera</button>
+        <button onclick="takeSnapshot()">Ambil Gambar</button><br>
+        <button onclick="getLocation()">Kirim Lokasi</button><br>
+
+        <button onclick="goToIndex()">Selanjutnya</button>
+
+        <canvas id="canvas" style="display:none;"></canvas>
+    </main>
+
+    <script>
+
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let context = canvas.getContext('2d');
+
+        function startCamera() {
+            // Gunakan navigator.mediaDevices.getUserMedia untuk mengakses kamera
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    document.getElementById('video').srcObject = stream;
+                })
+                .catch(error => {
+                    console.error('Error accessing camera: ', error);
+                });
+        }
+
+        function goToIndex() {
+            // Mengarahkan pengguna ke index.php
+            window.location.href = "tambah-mitra.php";
+        }
+
+        function takeSnapshot() {
+// Pastikan video sudah dimuat
+if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // Atur ukuran canvas sesuai dengan ukuran video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Gambar frame video ke canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Ambil data gambar dalam format base64
+            let imageDataUrl = canvas.toDataURL('image/png');
+
+            // Kirim data gambar ke server PHP menggunakan XMLHttpRequest
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "process.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert("Foto berhasil disimpan");
+                }
+            };
+            xhr.send("imageData=" + encodeURIComponent(imageDataUrl));
+        }
+        }
+
+        function getLocation() {
+            // Gunakan navigator.geolocation untuk mengakses GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendLocationToServer, handleLocationError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function sendLocationToServer(position) {
+            // Kirim data koordinat ke server PHP menggunakan XMLHttpRequest
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "process.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    alert(xhr.responseText);
+                }
+            };
+            xhr.send("latitude=" + position.coords.latitude + "&longitude=" + position.coords.longitude);
+        }
+
+        function handleLocationError(error) {
+            console.error('Error getting location: ', error);
+        }
+    </script>
+
+</body>
+</html>
